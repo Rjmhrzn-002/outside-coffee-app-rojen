@@ -4,8 +4,8 @@ import {
 } from '@react-native-google-signin/google-signin';
 import {Platform} from 'react-native';
 
-const WEB_CLIENT_ID = 'your-web-client-id.apps.googleusercontent.com';
-const IOS_CLIENT_ID = 'your-ios-client-id.apps.googleusercontent.com';
+const WEB_CLIENT_ID =
+  '467606413819-s1b0e6qk9pdal64nh8c1tnrnh36gncg8.apps.googleusercontent.com';
 
 let isConfigured = false;
 
@@ -14,31 +14,30 @@ export const signInWithGoogle = async () => {
     if (!isConfigured) {
       GoogleSignin.configure({
         webClientId: WEB_CLIENT_ID,
-        iosClientId: IOS_CLIENT_ID,
         scopes: ['profile', 'email'],
         offlineAccess: true,
       });
+
       isConfigured = true;
     }
 
     if (Platform.OS === 'android') {
-      await GoogleSignin.hasPlayServices({
+      const hasServices = await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
     }
 
-    // Perform Google Sign-In
     const userInfo = await GoogleSignin.signIn();
 
-    // Get ID Token
     const {idToken} = await GoogleSignin.getTokens();
 
     return {success: true, userInfo, idToken};
   } catch (error: any) {
-    console.error('Google Sign-In Error', {
+    console.error('❌ Google Sign-In Error', {
       platform: Platform.OS,
       errorCode: error.code,
       timestamp: new Date().toISOString(),
+      errorMessage: error.message,
     });
 
     switch (error.code) {

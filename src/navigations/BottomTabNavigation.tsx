@@ -14,13 +14,31 @@ export type BottomStackList = {
 
 const Tab = createBottomTabNavigator<BottomStackList>();
 
+const TAB_ARR = [
+  {name: 'Home', component: HomeScreen, options: {headerShown: false}},
+  {
+    name: 'Favourite',
+    component: FavouriteScreen,
+    options: {headerShown: false},
+  },
+  {name: 'Bag', component: BagScreen, options: {headerShown: false}},
+  {
+    name: 'Notification',
+    component: NotificationScreen,
+    options: {headerShown: false},
+  },
+];
 const BottomTabNavigation = () => {
   return (
     <Tab.Navigator initialRouteName="Home">
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Favourite" component={FavouriteScreen} />
-      <Tab.Screen name="Bag" component={BagScreen} />
-      <Tab.Screen name="Notification" component={NotificationScreen} />
+      {TAB_ARR.map(({name, component, options}) => (
+        <Tab.Screen
+          key={name}
+          name={name as keyof BottomStackList} // Types Safes the name as we know it's a screen from our bottom stack list
+          component={component}
+          options={options}
+        />
+      ))}
     </Tab.Navigator>
   );
 };

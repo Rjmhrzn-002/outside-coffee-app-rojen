@@ -5,15 +5,19 @@ export const SCREEN_WIDTH = Dimensions.get('screen').width;
 export const SCREEN_HEIGHT = Dimensions.get('screen').height;
 // Colors
 export const COLORS = {
-  PRIMARY: '#3498db',
+  PRIMARY: '#C67C4E',
   SECONDARY: '#2ecc71',
   TERTIARY: '#e74c3c',
-  BACKGROUND: '#ffffff',
-  TEXT: '#333333',
+  ACCENT: '#ED5151',
+  BACKGROUND: '#F9F9F9',
+  TEXT: '#989898',
   WHITE: '#ffffff',
   BLACK: '#000000',
-  GRAY: '#808080',
-  LIGHT_GRAY: '#f0f0f0',
+  OFF_WHITE: '#F1F1F1',
+  GREEN: '#2F4B4E',
+  LIGHT_GRAY: '#808080',
+  GRAY: '#313131',
+  DARK_GRAY: '#131313',
   TRANSPARENT: 'transparent',
 };
 
@@ -44,7 +48,7 @@ export const BORDER_RADIUS = {
   SM: 8,
   MD: 12,
   LG: 16,
-  XL: 20,
+  XL: 24,
   ROUND: 9999,
 };
 

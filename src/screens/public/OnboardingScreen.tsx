@@ -8,19 +8,51 @@ import {
   Image,
   useColorScheme,
   Platform,
+  Alert,
 } from 'react-native';
 import {COLORS, SCREEN_WIDTH, SCREEN_HEIGHT} from '../../Constants';
 import LinearGradient from 'react-native-linear-gradient';
 import GoogleSignIn from '@assets/icons/google-logo.svg';
 import {SafeAreaView} from 'react-native-safe-area-context';
-import {
-  GoogleSignin,
-  statusCodes,
-} from '@react-native-google-signin/google-signin';
-// import {GOOGLE_WEB_CLIENT_ID} from '@env';
+import {signInWithGoogle} from '@utils/googleSignin';
+
+import {storage} from '@configs/mmkvStorage';
+import {useAuthStore} from '@configs/useAppStore';
+
 const AuthScreen = () => {
   const isDarkMode = useColorScheme();
 
+  const handleGoogleSignup = async () => {
+    const {setAuthenticated} = useAuthStore.getState();
+
+    try {
+      const signUpRes = await signInWithGoogle();
+
+      if ('error' in signUpRes) {
+        Alert.alert('Unable to recognize the user');
+        return;
+      }
+
+      const {userInfo, idToken} = signUpRes;
+
+      if (!userInfo || !idToken) {
+        Alert.alert('Sign-in failed', 'Missing user data');
+        return;
+      }
+
+      // Store user information
+      storage.set('userInfo', userInfo.data?.user);
+      setAuthenticated(idToken);
+
+      // Optional: Navigate to main app or next screen
+      // navigation.navigate('Home');
+    } catch (error) {
+      console.error('Google Signup Error:', error);
+      Alert.alert('Signup Error', 'There was a problem signing up');
+    }
+  };
+
+  console.log(storage.get('userInfo'), 'userInfo');
   return (
     <SafeAreaView edges={[]} style={styles.container}>
       <StatusBar barStyle="light-content" backgroundColor="black" />
@@ -61,7 +93,7 @@ const AuthScreen = () => {
 
       {/* Google Button at Bottom */}
       <View style={styles.buttonContainer}>
-        <Pressable style={styles.googleButton}>
+        <Pressable style={styles.googleButton} onPress={handleGoogleSignup}>
           <GoogleSignIn />
           <Text style={styles.googleButtonText}>Continue with Google</Text>
         </Pressable>
