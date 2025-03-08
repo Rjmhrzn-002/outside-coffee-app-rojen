@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   useColorScheme,
   Platform,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import {COLORS, SCREEN_WIDTH, SCREEN_HEIGHT} from '../../Constants';
 import LinearGradient from 'react-native-linear-gradient';
@@ -18,14 +19,17 @@ import {signInWithGoogle} from '@utils/googleSignin';
 
 import {storage} from '@configs/mmkvStorage';
 import {useAuthStore} from '@configs/useAppStore';
+import CustomText from '@components/global/CustomText';
 
 const AuthScreen = () => {
   const isDarkMode = useColorScheme();
+  const [isLoading, setLoading] = useState(false);
 
   const handleGoogleSignup = async () => {
     const {setAuthenticated} = useAuthStore.getState();
 
     try {
+      setLoading(true);
       const signUpRes = await signInWithGoogle();
 
       if ('error' in signUpRes) {
@@ -43,20 +47,28 @@ const AuthScreen = () => {
       // Store user information
       storage.set('userInfo', userInfo.data?.user);
       setAuthenticated(idToken);
-
-      // Optional: Navigate to main app or next screen
-      // navigation.navigate('Home');
     } catch (error) {
       console.error('Google Signup Error:', error);
       Alert.alert('Signup Error', 'There was a problem signing up');
+    } finally {
+      setLoading(false);
     }
   };
 
   console.log(storage.get('userInfo'), 'userInfo');
+
   return (
     <SafeAreaView edges={[]} style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="black" />
-
+      {isLoading && (
+        <View style={styles.overlay}>
+          <ActivityIndicator color={COLORS.PRIMARY_SOFT} />
+        </View>
+      )}
+      <StatusBar
+        barStyle="light-content"
+        translucent={true}
+        backgroundColor={COLORS.TRANSPARENT}
+      />
       <View style={styles.imageContainer}>
         <Image
           source={require('@assets/images/coffeeSplash.jpg')}
@@ -83,19 +95,22 @@ const AuthScreen = () => {
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title}>Coffee so good,</Text>
-        <Text style={styles.title}>your taste buds will love it.</Text>
+        <CustomText weight="BOLD" style={styles.title}>
+          Coffee so good, your taste buds will love it.
+        </CustomText>
 
-        <Text style={styles.subtitle}>
+        <CustomText style={styles.subtitle}>
           The best grain, the finest roast, the powerful flavor.
-        </Text>
+        </CustomText>
       </View>
 
       {/* Google Button at Bottom */}
       <View style={styles.buttonContainer}>
         <Pressable style={styles.googleButton} onPress={handleGoogleSignup}>
           <GoogleSignIn />
-          <Text style={styles.googleButtonText}>Continue with Google</Text>
+          <CustomText weight="MEDIUM" style={styles.googleButtonText}>
+            Continue with Google
+          </CustomText>
         </Pressable>
       </View>
     </SafeAreaView>
@@ -103,6 +118,13 @@ const AuthScreen = () => {
 };
 
 const styles = StyleSheet.create({
+  overlay: {
+    ...StyleSheet.absoluteFillObject,
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+
   container: {
     flex: 1,
     backgroundColor: 'black',
@@ -138,12 +160,12 @@ const styles = StyleSheet.create({
   },
   title: {
     color: 'white',
-    fontSize: 34,
-    fontWeight: 'bold',
+    fontSize: 38,
     textAlign: 'center',
+    letterSpacing: 1,
   },
   subtitle: {
-    color: 'white',
+    color: COLORS.LIGHT_GRAY,
     fontSize: 14,
     marginTop: 10,
     textAlign: 'center',
@@ -166,7 +188,6 @@ const styles = StyleSheet.create({
   },
   googleButtonText: {
     color: '#00000054',
-    fontWeight: 'bold',
     fontSize: 20,
   },
 });

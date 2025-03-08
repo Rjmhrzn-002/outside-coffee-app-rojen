@@ -7,19 +7,27 @@ import {Platform} from 'react-native';
 const WEB_CLIENT_ID =
   '467606413819-s1b0e6qk9pdal64nh8c1tnrnh36gncg8.apps.googleusercontent.com';
 
+const IOS_CLIENT_ID =
+  '467606413819-f6h58s38hqojb3tbpvebo260oav19ehq.apps.googleusercontent.com';
+
 let isConfigured = false;
+
+const checkIsGoogleConfigured = () => {
+  if (!isConfigured) {
+    GoogleSignin.configure({
+      webClientId: WEB_CLIENT_ID,
+      iosClientId: IOS_CLIENT_ID,
+      scopes: ['profile', 'email'],
+      offlineAccess: true,
+    });
+    isConfigured = true;
+  }
+  return;
+};
 
 export const signInWithGoogle = async () => {
   try {
-    if (!isConfigured) {
-      GoogleSignin.configure({
-        webClientId: WEB_CLIENT_ID,
-        scopes: ['profile', 'email'],
-        offlineAccess: true,
-      });
-
-      isConfigured = true;
-    }
+    checkIsGoogleConfigured();
 
     if (Platform.OS === 'android') {
       const hasServices = await GoogleSignin.hasPlayServices({
@@ -55,10 +63,11 @@ export const signInWithGoogle = async () => {
 
 export const signOut = async () => {
   try {
-    await GoogleSignin.revokeAccess();
+    checkIsGoogleConfigured();
     await GoogleSignin.signOut();
-    console.log('User signed out successfully');
-  } catch (error) {
-    console.error('Error during sign out', error);
+    return {success: true};
+  } catch (error: any) {
+    console.error('❌ Google Sign-Out Error:', error.message);
+    return {error: 'Google Sign-Out failed'};
   }
 };

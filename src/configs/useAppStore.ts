@@ -11,9 +11,8 @@ interface AuthState {
 
 interface ThemeState {
   isDarkMode: boolean;
-  toggleTheme: () => void;
   systemTheme: 'light' | 'dark';
-  initializeTheme: () => void;
+  updateTheme: (colorScheme: 'light' | 'dark' | null) => void;
 }
 
 // Authentication Store
@@ -23,7 +22,6 @@ export const useAuthStore = create<AuthState>(set => ({
 
   setAuthenticated: (token: string) => {
     storage.set('authToken', token);
-
     set({
       isAuthenticated: true,
       token: token,
@@ -31,9 +29,7 @@ export const useAuthStore = create<AuthState>(set => ({
   },
 
   logout: () => {
-    // Remove token from storage
     storage.remove('authToken');
-
     set({
       isAuthenticated: false,
       token: null,
@@ -42,38 +38,14 @@ export const useAuthStore = create<AuthState>(set => ({
 }));
 
 // Theme Store
-export const useThemeStore = create<ThemeState>((set, get) => ({
-  // Prioritize stored preference, fallback to system theme
-  isDarkMode:
-    storage.get<boolean>('isDarkMode') ??
-    Appearance.getColorScheme() === 'dark',
-
+export const useThemeStore = create<ThemeState>(set => ({
   systemTheme: Appearance.getColorScheme() || 'light',
+  isDarkMode: Appearance.getColorScheme() === 'dark',
 
-  initializeTheme: () => {
-    const systemTheme = Appearance.getColorScheme() || 'light';
+  updateTheme: colorScheme => {
     set({
-      systemTheme,
-      isDarkMode: storage.get<boolean>('isDarkMode') ?? systemTheme === 'dark',
-    });
-  },
-
-  toggleTheme: () => {
-    set(state => {
-      const newIsDarkMode = !state.isDarkMode;
-      storage.set('isDarkMode', newIsDarkMode);
-      return {
-        isDarkMode: newIsDarkMode,
-        systemTheme: Appearance.getColorScheme() || 'light',
-      };
+      systemTheme: colorScheme || 'light',
+      isDarkMode: colorScheme === 'dark',
     });
   },
 }));
-
-// Optional: Add a listener for system theme changes
-Appearance.addChangeListener(preferences => {
-  const {systemTheme, initializeTheme} = useThemeStore.getState();
-  if (systemTheme !== preferences.colorScheme) {
-    initializeTheme();
-  }
-});

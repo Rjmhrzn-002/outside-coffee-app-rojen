@@ -1,0 +1,8 @@
+// fonts.gradle
+android {
+    sourceSets {
+        main {
+            assets.srcDirs += ["./src/assets/fonts/"]
+        }
+    }
+}

@@ -6,14 +6,15 @@ export const SCREEN_HEIGHT = Dimensions.get('screen').height;
 // Colors
 export const COLORS = {
   PRIMARY: '#C67C4E',
+  PRIMARY_SOFT: '#FFF5EE',
   SECONDARY: '#2ecc71',
   TERTIARY: '#e74c3c',
   ACCENT: '#ED5151',
   BACKGROUND: '#F9F9F9',
-  TEXT: '#989898',
   WHITE: '#ffffff',
-  BLACK: '#000000',
   OFF_WHITE: '#F1F1F1',
+  TEXT: '#989898',
+  BLACK: '#000000',
   GREEN: '#2F4B4E',
   LIGHT_GRAY: '#808080',
   GRAY: '#313131',
@@ -68,5 +69,19 @@ export const FONTS = {
     BOLD: '700',
     EXTRA_BOLD: '800',
     BLACK: '900',
+  },
+};
+
+// Custom sora fonts
+export const CUSTOM_FONT = {
+  FAMILY: {
+    THIN: 'Sora-Thin',
+    EXTRA_LIGHT: 'Sora-ExtraLight',
+    LIGHT: 'Sora-Light',
+    REGULAR: 'Sora-Regular',
+    MEDIUM: 'Sora-Medium',
+    SEMI_BOLD: 'Sora-SemiBold',
+    BOLD: 'Sora-Bold',
+    EXTRA_BOLD: 'Sora-ExtraBold',
   },
 };

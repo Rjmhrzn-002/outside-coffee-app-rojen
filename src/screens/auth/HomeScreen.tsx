@@ -1,15 +1,15 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useReducer, useState} from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  SafeAreaView,
   StatusBar,
   Image,
   TextInput,
   TouchableOpacity,
-  ScrollView,
   FlatList,
+  useColorScheme,
+  Alert,
+  RefreshControl,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -17,20 +17,33 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import {useAuthStore} from '@configs/useAppStore';
+import LinearGradient from 'react-native-linear-gradient';
+import {StackNavigationProp} from '@react-navigation/stack';
+
+// Components and configs
+import CustomText from '@components/global/CustomText';
+import {getRequest} from '@configs/api';
+import {storage} from '@configs/mmkvStorage';
 import {
   BORDER_RADIUS,
   COLORS,
-  FONTS,
+  CUSTOM_FONT,
+  FONT_SIZES,
   SCREEN_HEIGHT,
-  SCREEN_WIDTH,
   SPACING,
 } from '../../Constants';
-import {storage} from '@configs/mmkvStorage';
-import Ionicons from 'react-native-vector-icons/Ionicons';
-import LinearGradient from 'react-native-linear-gradient';
-import {StackNavigationProp} from '@react-navigation/stack';
-import {RouteProp} from '@react-navigation/native';
 
+// Icons
+import StarIcon from '@assets/icons/home/star.svg';
+import SearchIcon from '@assets/icons/home/search.svg';
+import SettingIcon from '@assets/icons/home/setting.svg';
+import {signOut} from '@utils/googleSignin';
+import SearchBar from '@components/global/SearchBar';
+import {ICoffee} from '@type/app.type';
+import {RootStackParamList} from '@navigations/AppStackNavigation';
+
+// Types
 type UserInfo = {
   photo: string;
   givenName: string;
@@ -40,65 +53,25 @@ type UserInfo = {
   id: string;
 };
 
-const coffeeItems = [
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-  {
-    name: 'Cappuccino',
-    description: 'with Chocolate',
-    price: 4.53,
-    rating: 4.8,
-    image: require('@assets/images/coffeeSplash.jpg'), // Replace with actual image path
-  },
-];
-
-type RootStackParamList = {
-  Home: undefined;
-  ProductDetail: {itemId: number};
-};
-
 type Props = {
-  navigation: StackNavigationProp<RootStackParamList, 'Home', 'ProductDetail'>;
+  navigation: StackNavigationProp<RootStackParamList, 'ProductDetail'>;
 };
 
 const HomeScreen: React.FC<Props> = ({navigation}) => {
+  // State and Hooks
+  const {isAuthenticated, token, logout} = useAuthStore();
+  const isDarkMode = useColorScheme() === 'dark' ? true : false;
   const userInfo: UserInfo | null = storage.get<UserInfo>('userInfo');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isMenuOpen, toggleMenu] = useReducer(prev => !prev, false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [coffeeList, setCoffeeList] = useState<ICoffee[]>([]);
+  const [activeTab, setActiveTab] = useState('All');
+  const [regionalTabs, setRegionalTabs] = useState<string[]>([]);
+
+  // User data
   const photo = userInfo?.photo || 'https://via.placeholder.com/40';
-  const [activeTab, setActiveTab] = useState(coffeeItems[0].name);
-  const coffeeTypes = ['Cappuccino', 'Macchiato', 'Latte', 'Americano'];
+  // Animation values
   const fadeAnim = useSharedValue(0);
   const translateX = useSharedValue(50);
   const animatedStyle = useAnimatedStyle(() => ({
@@ -106,17 +79,129 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
     transform: [{translateX: translateX.value}],
   }));
 
-  const handleCardPress = (id: number) => {
-    navigation.navigate('ProductDetail', {itemId: Number(id)});
+  const signOutOpacity = useSharedValue(0);
+  const translateSignOutX = useSharedValue(50);
+  const animatedSignOutStyle = useAnimatedStyle(() => ({
+    opacity: signOutOpacity.value,
+    transform: [{translateX: translateSignOutX.value}],
+  }));
+
+  // Navigation handler
+  const handleCardPress = (item: ICoffee) => {
+    navigation.navigate('ProductDetail', {item});
   };
 
+  const onRefresh = async () => {
+    fetchCoffeList();
+  };
+
+  // API call
+  const fetchCoffeList = async () => {
+    try {
+      setIsLoading(true);
+      const coffeeList = await getRequest('/api');
+      if (Array.isArray(coffeeList) && coffeeList.length > 0) {
+        const uniqueRegions = Array.from(
+          new Set(coffeeList.map(p => p.region)),
+        );
+        setRegionalTabs(['All', ...uniqueRegions]);
+        setCoffeeList(coffeeList);
+      } else {
+        Alert.alert('Something went wrong !!', 'Unable to get coffee lists');
+        setCoffeeList([]);
+        setRegionalTabs(['All']);
+      }
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const filteredCoffeeList =
+    activeTab === 'All'
+      ? coffeeList
+      : coffeeList.filter(item => item.region === activeTab);
+
+  // Effects
   useEffect(() => {
-    fadeAnim.value = withTiming(1, {duration: 400});
+    fetchCoffeList();
+  }, []);
+
+  // Animate when menu toggles
+  useEffect(() => {
+    if (isMenuOpen) {
+      signOutOpacity.value = withTiming(1, {duration: 300});
+      translateSignOutX.value = withTiming(0, {duration: 300});
+    } else {
+      signOutOpacity.value = withTiming(0, {duration: 300});
+      translateSignOutX.value = withTiming(50, {duration: 300});
+    }
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    fadeAnim.value = withTiming(1, {duration: 600});
     translateX.value = withSpring(0, {damping: 60, stiffness: 100});
   }, []);
 
+  const renderCoffeeItem = ({item}: {item: ICoffee}) => (
+    <TouchableOpacity
+      style={[
+        styles.coffeeItemContainer,
+        isDarkMode && {backgroundColor: COLORS.LIGHT_GRAY},
+      ]}
+      onPress={() => handleCardPress(item)}>
+      <View style={styles.ratingContainer}>
+        <StarIcon />
+        <CustomText weight="MEDIUM" style={styles.ratingText}>
+          4.8
+        </CustomText>
+      </View>
+      <Image source={{uri: item.image_url}} style={styles.coffeeImage} />
+      <View style={styles.coffeeDetailsContainer}>
+        <CustomText
+          weight="BOLD"
+          style={[styles.coffeeName, isDarkMode && {color: COLORS.WHITE}]}>
+          {item.name}
+        </CustomText>
+        <CustomText
+          weight="MEDIUM"
+          style={[
+            styles.coffeeDescription,
+            isDarkMode && {color: COLORS.OFF_WHITE},
+          ]}>
+          {item.description}
+        </CustomText>
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+          }}>
+          <View style={styles.coffeeRatingPriceContainer}>
+            <CustomText weight="SEMI_BOLD" style={styles.priceText}>
+              ${item.price}
+            </CustomText>
+          </View>
+          <TouchableOpacity style={styles.addButton}>
+            <CustomText style={styles.addButtonText}>+</CustomText>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const handleLogout = () => {
+    signOut();
+    logout();
+    storage.remove('userInfo');
+  };
+
+  console.log(isAuthenticated, token, 'auth states');
+
   return (
-    <View style={styles.container}>
+    <View
+      style={[styles.container, isDarkMode && {backgroundColor: COLORS.GRAY}]}>
       <StatusBar
         barStyle="light-content"
         translucent={true}
@@ -131,67 +216,69 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
         style={styles.headerContainer}
       />
 
-      <View
-        style={{
-          position: 'absolute',
-          marginTop: 60,
-          gap: 24,
-          height: SCREEN_HEIGHT,
-        }}>
+      <View style={styles.floatingWrapper}>
         <View style={styles.locationContainer}>
           <View>
-            <Text style={styles.locationTitle}>Location</Text>
-            <Text style={styles.locationText}>Bilzen, Tanjungbalai</Text>
+            <CustomText style={styles.locationTitle}>Location</CustomText>
+            <CustomText weight="SEMI_BOLD" style={styles.locationText}>
+              Bilzen, Tanjungbalai
+            </CustomText>
           </View>
-          <Image source={{uri: photo}} style={styles.profileImage} />
-        </View>
-
-        <View style={styles.searchContainer}>
-          <View style={styles.searchInputContainer}>
-            <Ionicons name="search" size={20} color="#888" />
-            <TextInput
-              style={styles.searchInput}
-              keyboardType="default"
-              placeholder="Search coffee"
-              placeholderTextColor={COLORS.TEXT}
-            />
+          <View style={{position: 'relative', flexDirection: 'row', gap: 5}}>
+            <Animated.View style={[animatedSignOutStyle, styles.signOutBtn]}>
+              <TouchableOpacity onPress={handleLogout}>
+                <CustomText>SignOut</CustomText>
+              </TouchableOpacity>
+            </Animated.View>
+            <TouchableOpacity onPress={toggleMenu}>
+              <Image source={{uri: photo}} style={styles.profileImage} />
+            </TouchableOpacity>
           </View>
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="filter" size={20} color="white" />
-          </TouchableOpacity>
         </View>
+        <SearchBar
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          coffeeList={coffeeList}
+          onClick={handleCardPress}
+        />
 
         <View style={styles.coffeeListContainer}>
           <FlatList
-            data={coffeeItems}
+            data={filteredCoffeeList}
             numColumns={2}
             showsVerticalScrollIndicator={false}
-            keyExtractor={(item, index) => index.toString()}
+            keyExtractor={(_, index) => index.toString()}
+            refreshControl={
+              <RefreshControl refreshing={isLoading} onRefresh={onRefresh} />
+            }
             ListHeaderComponent={
               <View style={{gap: 24, marginBottom: 24}}>
                 <View style={styles.promoContainer}>
                   <Image
                     style={styles.promoImage}
-                    source={require('@assets/images/coffeeSplash.jpg')}
+                    source={require('@assets/images/hero_card_bg.jpg')}
                     resizeMode="cover"
                   />
 
                   <View style={styles.promoContent}>
                     <TouchableOpacity style={styles.promoButton}>
-                      <Text style={styles.promoButtonText}>Promo</Text>
+                      <CustomText
+                        weight="SEMI_BOLD"
+                        style={styles.promoButtonText}>
+                        Promo
+                      </CustomText>
                     </TouchableOpacity>
-                    <Text style={styles.promoTitle}>Buy one get one free</Text>
+                    <CustomText weight="BOLD" style={styles.promoTitle}>
+                      Buy one get one free
+                    </CustomText>
                   </View>
                 </View>
                 <Animated.View style={animatedStyle}>
                   <FlatList
-                    data={coffeeTypes}
+                    data={regionalTabs}
                     horizontal
                     showsHorizontalScrollIndicator={false}
                     contentContainerStyle={styles.categoryContainer}
-                    // ListFooterComponent={() => (
-                    //   <View style={{marginRight: SPACING.LG}} />
-                    // )}
                     renderItem={({item}) => (
                       <TouchableOpacity
                         style={[
@@ -199,17 +286,18 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
                           activeTab === item && {
                             backgroundColor: COLORS.PRIMARY,
                           },
-                        ]}>
-                        <Text
+                        ]}
+                        onPress={() => setActiveTab(item)}>
+                        <CustomText
                           style={[
                             styles.categoryText,
                             activeTab === item && {
                               color: COLORS.WHITE,
-                              fontWeight: '500',
+                              fontFamily: CUSTOM_FONT.FAMILY.MEDIUM,
                             },
                           ]}>
                           {item}
-                        </Text>
+                        </CustomText>
                       </TouchableOpacity>
                     )}
                     keyExtractor={(item, index) => index.toString()}
@@ -217,39 +305,10 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
                 </Animated.View>
               </View>
             }
-            ListFooterComponent={<View />}
-            ListFooterComponentStyle={{paddingBottom: 100}}
+            ListFooterComponent={<View style={{paddingBottom: 120}} />}
             columnWrapperStyle={styles.columnWrapper}
             contentContainerStyle={styles.flatListContent}
-            renderItem={({item, index}) => (
-              <TouchableOpacity
-                style={[styles.coffeeItemContainer]}
-                onPress={() => handleCardPress(1)}>
-                <View style={styles.ratingContainer}>
-                  <Ionicons name="star" size={16} color="#FFD700" />
-                  <Text style={styles.ratingText}>{item.rating}</Text>
-                </View>
-                <Image source={item.image} style={styles.coffeeImage} />
-                <View style={styles.coffeeDetailsContainer}>
-                  <Text style={styles.coffeeName}>{item.name}</Text>
-                  <Text style={styles.coffeeDescription}>
-                    {item.description}
-                  </Text>
-                  <View
-                    style={{
-                      flexDirection: 'row',
-                      justifyContent: 'space-between',
-                    }}>
-                    <View style={styles.coffeeRatingPriceContainer}>
-                      <Text style={styles.priceText}>${item.price}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.addButton}>
-                      <Text style={styles.addButtonText}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            )}
+            renderItem={renderCoffeeItem}
           />
         </View>
       </View>
@@ -260,35 +319,49 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: COLORS.BACKGROUND,
     position: 'relative',
   },
   headerContainer: {
     height: SCREEN_HEIGHT * 0.325,
   },
+  floatingWrapper: {
+    position: 'absolute',
+    marginTop: 60,
+    gap: 24,
+    height: SCREEN_HEIGHT,
+  },
   locationContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginHorizontal: SPACING.XL,
+    marginHorizontal: SPACING.LG,
   },
   locationTitle: {
     color: 'white',
+    fontSize: FONT_SIZES.MD,
   },
   locationText: {
     color: 'white',
-    fontWeight: 'bold',
+    fontSize: FONT_SIZES.LG,
   },
   profileImage: {
     width: 50,
     height: 50,
     borderRadius: BORDER_RADIUS.MD,
   },
+  signOutBtn: {
+    borderWidth: 1,
+    borderColor: COLORS.TEXT,
+    borderRadius: BORDER_RADIUS.MD,
+    backgroundColor: COLORS.DARK_GRAY,
+    paddingHorizontal: SPACING.LG,
+    justifyContent: 'center',
+  },
   searchContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginHorizontal: SPACING.XL,
     backgroundColor: COLORS.GRAY,
     borderRadius: BORDER_RADIUS.MD,
     padding: 4,
@@ -305,11 +378,16 @@ const styles = StyleSheet.create({
     flex: 1,
     color: 'white',
     marginLeft: 10,
+    fontFamily: CUSTOM_FONT.FAMILY.REGULAR,
   },
   filterButton: {
-    backgroundColor: '#D17842',
+    backgroundColor: COLORS.PRIMARY,
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: 10,
-    width: 50,
+    width: 45,
+    height: 45,
+    aspectRatio: 1,
     borderRadius: BORDER_RADIUS.MD,
   },
   promoContainer: {
@@ -329,7 +407,7 @@ const styles = StyleSheet.create({
     zIndex: 10,
   },
   promoButton: {
-    backgroundColor: '#D17842',
+    backgroundColor: COLORS.ACCENT,
     paddingVertical: 6,
     paddingHorizontal: 14,
     borderRadius: BORDER_RADIUS.MD,
@@ -338,38 +416,39 @@ const styles = StyleSheet.create({
   },
   promoButtonText: {
     color: 'white',
-    fontWeight: '600',
     fontSize: 14,
   },
   promoTitle: {
     color: 'white',
     fontSize: 32,
-    fontWeight: 'bold',
     textShadowColor: 'black',
     width: '60%',
     textShadowOffset: {width: 20, height: -10},
   },
 
   categoryContainer: {
-    maxHeight: 35, // to ensure category container does inherit the flex 1 height
+    maxHeight: 40, // to ensure category container does inherit the flex 1 height
   },
   categoryItem: {
     marginRight: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: COLORS.OFF_WHITE,
     paddingHorizontal: SPACING.MD,
-    paddingVertical: SPACING.SM,
+    paddingVertical: SPACING.XS,
     borderRadius: BORDER_RADIUS.MD,
   },
   categoryText: {
     color: COLORS.GREEN,
+    fontFamily: CUSTOM_FONT.FAMILY.REGULAR,
     fontSize: 16,
   },
   coffeeListContainer: {
     flex: 1,
-    paddingHorizontal: SPACING.XL,
+    paddingHorizontal: SPACING.LG,
   },
   flatListContent: {
-    paddingBottom: SPACING.XL,
+    paddingBottom: SPACING.LG,
   },
   columnWrapper: {
     gap: SPACING.SM,
@@ -377,9 +456,9 @@ const styles = StyleSheet.create({
   },
   coffeeItemContainer: {
     minWidth: '49%',
-    backgroundColor: 'white',
+    backgroundColor: COLORS.WHITE,
     borderRadius: 20,
-    padding: SPACING.SM,
+    padding: SPACING.XS,
     marginBottom: SPACING.SM,
   },
   coffeeImage: {
@@ -391,44 +470,42 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'space-between',
     padding: SPACING.XS,
-    marginTop: 10,
   },
   coffeeName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    color: COLORS.DARK_GRAY,
   },
   coffeeDescription: {
     color: '#888',
-    marginTop: 5,
+    fontSize: 12,
+    marginBottom: 5,
   },
   coffeeRatingPriceContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
+    paddingLeft: 10,
   },
   ratingContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     position: 'absolute',
     zIndex: 20,
-    top: 15,
+    top: 10,
     left: 20,
   },
   ratingText: {
     marginLeft: 5,
     color: 'white',
-    fontWeight: 'bold',
   },
   priceText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#D17842',
+    fontSize: 18,
+    color: COLORS.GREEN,
   },
   addButton: {
     backgroundColor: '#D17842',
-    width: 40,
-    height: 40,
+    width: 32,
+    height: 32,
     borderRadius: 10,
     justifyContent: 'center',
     alignItems: 'center',
@@ -437,7 +514,6 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: 'white',
     fontSize: 20,
-    fontWeight: 'bold',
   },
 });
 

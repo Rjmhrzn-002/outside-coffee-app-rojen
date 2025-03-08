@@ -5,16 +5,24 @@ import BottomTabScreens from './BottomTabNavigation';
 import OnboardScreen from '@screens/public/OnboardingScreen';
 import ProductDetail from '@screens/auth/ProductDetail';
 import {useAuthStore} from '@configs/useAppStore';
+import {ICoffee} from '@type/app.type';
 
-type RootStackParamList = {
+export type RootStackParamList = {
   BottomTabs: any;
   Onboard: any;
-  ProductDetail: {itemId: number};
+  ProductDetail: {item: ICoffee};
+};
+
+// Type safes the name as we know it's a screen from our stack list
+type RouteConfig = {
+  name: keyof RootStackParamList;
+  component: any;
+  options: {};
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
 
-const publicScreen = [
+const publicScreen: RouteConfig[] = [
   {
     name: 'Onboard',
     component: OnboardScreen,
@@ -22,7 +30,7 @@ const publicScreen = [
   },
 ];
 
-const authScreen = [
+const authScreen: RouteConfig[] = [
   {
     name: 'BottomTabs',
     component: BottomTabScreens,
@@ -47,7 +55,7 @@ const AppStackNavigation: React.FC = () => {
           ? authScreen.map(({name, component, options}) => (
               <Stack.Screen
                 key={name}
-                name={name as keyof RootStackParamList} // Type safes the name as we know it's a screen from our stack list
+                name={name}
                 component={component}
                 options={options}
               />
@@ -55,7 +63,7 @@ const AppStackNavigation: React.FC = () => {
           : publicScreen.map(({name, component, options}) => (
               <Stack.Screen
                 key={name}
-                name={name as keyof RootStackParamList} // Type safes the name as we know it's a screen from our stack list
+                name={name}
                 component={component}
                 options={options}
               />

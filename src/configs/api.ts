@@ -1,36 +1,64 @@
-import axios from 'axios';
+import axios, {AxiosResponse} from 'axios';
 import {useAuthStore} from './useAppStore';
 
-const API_BASE_URL = 'https://fake-coffee-api.vercel.app/api';
+const {token, isAuthenticated, logout} = useAuthStore.getState();
 
-const api = axios.create({
-  baseURL: API_BASE_URL,
+// Create axios instance
+const apiClient = axios.create({
+  baseURL: 'https://fake-coffee-brand-api.vercel.app',
   timeout: 15000,
   headers: {'Content-Type': 'application/json'},
 });
 
-api.interceptors.request.use(
-  async config => {
-    const token = useAuthStore.getState();
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Add request interceptor for authentication
+apiClient.interceptors.request.use(
+  config => {
+    if (token && isAuthenticated) {
+      // config.headers.Authorization = `Bearer ${token}`;
+      // In presence of Backend services, we could append Bearer Token to the request headers
     }
     return config;
   },
   error => Promise.reject(error),
 );
 
-api.interceptors.response.use(
+// Add response interceptor for handling 401 errors
+apiClient.interceptors.response.use(
   response => response,
   error => {
-    console.error('API Error:', error.response?.data || error.message);
-
     if (error.response?.status === 401) {
-      useAuthStore.getState().logout(); // Clear token
+      logout();
     }
-
     return Promise.reject(error);
   },
 );
 
-export default api;
+// Response and error handling functions
+const handleResponse = (response: AxiosResponse) => {
+  return response.data;
+};
+
+const handleError = async (error: any) => {
+  if (error instanceof Error) {
+    console.error('Error fetching data:', error.message);
+  } else if (error.response) {
+    console.error(
+      `API error: ${error.response.status} - ${error.response.data}`,
+    );
+  } else {
+    console.error('Unknown error occurred:', error);
+  }
+  throw error;
+};
+
+// api service function (GET)
+export const getRequest = async (endpoint: string) => {
+  try {
+    const response = await apiClient.get(endpoint);
+    return handleResponse(response);
+  } catch (error) {
+    handleError(error);
+  }
+};
+
+export default apiClient;
