@@ -41,13 +41,7 @@ export const signInWithGoogle = async () => {
 
     return {success: true, userInfo, idToken};
   } catch (error: any) {
-    console.error('❌ Google Sign-In Error', {
-      platform: Platform.OS,
-      errorCode: error.code,
-      timestamp: new Date().toISOString(),
-      errorMessage: error.message,
-    });
-
+    console.log(error, 'google sign in');
     switch (error.code) {
       case statusCodes.SIGN_IN_CANCELLED:
         return {error: 'Sign-in cancelled by user'};

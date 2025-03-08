@@ -3,12 +3,52 @@ import {Dimensions} from 'react-native';
 // Screen Dimensions
 export const SCREEN_WIDTH = Dimensions.get('screen').width;
 export const SCREEN_HEIGHT = Dimensions.get('screen').height;
+
+const BASE_UNIT = SCREEN_WIDTH * 0.04;
+
+export const SPACING = {
+  XS: BASE_UNIT * 0.25,
+  SM: BASE_UNIT * 0.5,
+  MD: BASE_UNIT,
+  LG: BASE_UNIT * 1.5,
+  XL: BASE_UNIT * 2,
+  XXL: BASE_UNIT * 2.5,
+};
+
+// Font Sizes
+export const FONT_SIZES = {
+  XS: SCREEN_WIDTH * 0.025,
+  SM: SCREEN_WIDTH * 0.03,
+  MD: SCREEN_WIDTH * 0.035,
+  BASE: SCREEN_WIDTH * 0.04,
+  LG: SCREEN_WIDTH * 0.045,
+  XL: SCREEN_WIDTH * 0.05,
+  XXL: SCREEN_WIDTH * 0.06,
+  XXXL: SCREEN_WIDTH * 0.07,
+};
+
+// Border Radius
+export const BORDER_RADIUS = {
+  XS: SCREEN_WIDTH * 0.01,
+  SM: SCREEN_WIDTH * 0.02,
+  MD: SCREEN_WIDTH * 0.03,
+  LG: SCREEN_WIDTH * 0.04,
+  XL: SCREEN_WIDTH * 0.06,
+  ROUND: 9999,
+};
+
+export const responsiveWidth = (percentage: number) => {
+  return SCREEN_WIDTH * (percentage / 100);
+};
+
+export const responsiveHeight = (percentage: number) => {
+  return SCREEN_HEIGHT * (percentage / 100);
+};
+
 // Colors
 export const COLORS = {
   PRIMARY: '#C67C4E',
   PRIMARY_SOFT: '#FFF5EE',
-  SECONDARY: '#2ecc71',
-  TERTIARY: '#e74c3c',
   ACCENT: '#ED5151',
   BACKGROUND: '#F9F9F9',
   WHITE: '#ffffff',
@@ -22,53 +62,12 @@ export const COLORS = {
   TRANSPARENT: 'transparent',
 };
 
-export const SPACING = {
-  XS: 4,
-  SM: 8,
-  MD: 16,
-  LG: 24,
-  XL: 32,
-  XXL: 40,
-};
-
-// Font Sizes
-export const FONT_SIZES = {
-  XS: 10,
-  SM: 12,
-  MD: 14,
-  BASE: 16,
-  LG: 18,
-  XL: 20,
-  XXL: 24,
-  XXXL: 28,
-};
-
-// Border Radius
-export const BORDER_RADIUS = {
-  XS: 4,
-  SM: 8,
-  MD: 12,
-  LG: 16,
-  XL: 24,
-  ROUND: 9999,
-};
-
 // Fonts
 export const FONTS = {
   FAMILY: {
     REGULAR: 'System',
     BOLD: 'System-Bold',
     ITALIC: 'System-Italic',
-  },
-  WEIGHT: {
-    THIN: '100',
-    LIGHT: '300',
-    REGULAR: '400',
-    MEDIUM: '500',
-    SEMI_BOLD: '600',
-    BOLD: '700',
-    EXTRA_BOLD: '800',
-    BLACK: '900',
   },
 };
 
@@ -85,3 +84,8 @@ export const CUSTOM_FONT = {
     EXTRA_BOLD: 'Sora-ExtraBold',
   },
 };
+
+// Size differenciate values
+export const isSmallDevice = SCREEN_WIDTH < 375;
+export const isMediumDevice = SCREEN_WIDTH >= 375 && SCREEN_WIDTH < 768;
+export const isLargeDevice = SCREEN_WIDTH >= 768;

@@ -1,25 +1,32 @@
 import React, {useEffect, useState} from 'react';
 import {
   View,
-  Text,
-  Pressable,
+  TouchableOpacity,
   StyleSheet,
   StatusBar,
   Image,
   useColorScheme,
-  Platform,
+  SafeAreaView,
   Alert,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
-import {COLORS, SCREEN_WIDTH, SCREEN_HEIGHT} from '../../Constants';
+import {
+  COLORS,
+  FONT_SIZES,
+  responsiveWidth,
+  SCREEN_HEIGHT,
+  SCREEN_WIDTH,
+  SPACING,
+} from '../../Constants';
 import LinearGradient from 'react-native-linear-gradient';
 import GoogleSignIn from '@assets/icons/google-logo.svg';
-import {SafeAreaView} from 'react-native-safe-area-context';
 import {signInWithGoogle} from '@utils/googleSignin';
 
 import {storage} from '@configs/mmkvStorage';
 import {useAuthStore} from '@configs/useAppStore';
 import CustomText from '@components/global/CustomText';
+import notifee from '@configs/notifee';
 
 const AuthScreen = () => {
   const isDarkMode = useColorScheme();
@@ -33,7 +40,13 @@ const AuthScreen = () => {
       const signUpRes = await signInWithGoogle();
 
       if ('error' in signUpRes) {
-        Alert.alert('Unable to recognize the user');
+        if (
+          signUpRes.error === 'popup_closed_by_user' ||
+          signUpRes.error === 'user_cancelled'
+        ) {
+          console.log('User dismissed the Google Sign-In popup.');
+          return;
+        }
         return;
       }
 
@@ -44,9 +57,15 @@ const AuthScreen = () => {
         return;
       }
 
+      console.log();
       // Store user information
       storage.set('userInfo', userInfo.data?.user);
       setAuthenticated(idToken);
+      console.log('userInfo and auth handled before notification');
+      if (userInfo.data?.user.givenName) {
+        console.log('notification invoked');
+        notifee.sendWelcomeNotification({name: userInfo.data.user.givenName});
+      }
     } catch (error) {
       console.error('Google Signup Error:', error);
       Alert.alert('Signup Error', 'There was a problem signing up');
@@ -58,10 +77,10 @@ const AuthScreen = () => {
   console.log(storage.get('userInfo'), 'userInfo');
 
   return (
-    <SafeAreaView edges={[]} style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {isLoading && (
         <View style={styles.overlay}>
-          <ActivityIndicator color={COLORS.PRIMARY_SOFT} />
+          <ActivityIndicator size="large" color={COLORS.PRIMARY} />
         </View>
       )}
       <StatusBar
@@ -95,9 +114,17 @@ const AuthScreen = () => {
 
       {/* Content */}
       <View style={styles.content}>
-        <CustomText weight="BOLD" style={styles.title}>
-          Coffee so good, your taste buds will love it.
-        </CustomText>
+        <View style={styles.titleContainer}>
+          <CustomText weight="BOLD" style={styles.title}>
+            Coffee so good,
+          </CustomText>
+          <CustomText weight="BOLD" style={styles.title}>
+            your taste buds
+          </CustomText>
+          <CustomText weight="BOLD" style={styles.title}>
+            will love it.
+          </CustomText>
+        </View>
 
         <CustomText style={styles.subtitle}>
           The best grain, the finest roast, the powerful flavor.
@@ -106,12 +133,17 @@ const AuthScreen = () => {
 
       {/* Google Button at Bottom */}
       <View style={styles.buttonContainer}>
-        <Pressable style={styles.googleButton} onPress={handleGoogleSignup}>
-          <GoogleSignIn />
+        <TouchableOpacity
+          style={styles.googleButton}
+          onPress={handleGoogleSignup}>
+          <GoogleSignIn
+            width={responsiveWidth(6)}
+            height={responsiveWidth(6)}
+          />
           <CustomText weight="MEDIUM" style={styles.googleButtonText}>
             Continue with Google
           </CustomText>
-        </Pressable>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
@@ -123,6 +155,8 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    zIndex: 999,
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
 
   container: {
@@ -132,10 +166,11 @@ const styles = StyleSheet.create({
 
   imageContainer: {
     width: '100%',
-    height: SCREEN_HEIGHT * 0.6,
+    height: SCREEN_HEIGHT * (SCREEN_HEIGHT < 700 ? 0.5 : 0.6),
     position: 'relative',
-    paddingTop: 16,
+    paddingTop: SCREEN_HEIGHT * 0.02,
   },
+
   backgroundImage: {
     width: '100%',
     height: '100%',
@@ -146,9 +181,11 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '30%',
   },
+
   topGradient: {
     top: 0,
   },
+
   bottomGradient: {
     bottom: 0,
   },
@@ -156,39 +193,54 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 34,
+    justifyContent: 'center',
+    paddingHorizontal: responsiveWidth(6),
+    paddingVertical: responsiveWidth(4),
   },
+
+  titleContainer: {
+    alignItems: 'center',
+    marginBottom: responsiveWidth(4),
+  },
+
   title: {
     color: 'white',
-    fontSize: 38,
+    fontSize: SCREEN_WIDTH * 0.09,
     textAlign: 'center',
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    lineHeight: SCREEN_WIDTH * 0.11,
+    marginBottom: 0,
   },
+
   subtitle: {
     color: COLORS.LIGHT_GRAY,
-    fontSize: 14,
-    marginTop: 10,
+    fontSize: FONT_SIZES.MD,
+    marginHorizontal: SPACING.XL,
     textAlign: 'center',
+    marginTop: responsiveWidth(2), // Add some space between title and subtitle
   },
 
   buttonContainer: {
-    paddingBottom: 30,
+    paddingBottom: SCREEN_HEIGHT * 0.04,
+    paddingTop: SCREEN_HEIGHT * 0.02,
     alignItems: 'center',
   },
+
   googleButton: {
     flexDirection: 'row',
     backgroundColor: 'white',
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 10,
+    paddingHorizontal: responsiveWidth(5),
+    paddingVertical: responsiveWidth(3.5),
+    borderRadius: responsiveWidth(2.5),
     alignItems: 'center',
-    width: '80%',
-    gap: 10,
+    width: SCREEN_WIDTH < 350 ? '90%' : '80%',
+    gap: responsiveWidth(2.5),
     justifyContent: 'center',
   },
+
   googleButtonText: {
     color: '#00000054',
-    fontSize: 20,
+    fontSize: FONT_SIZES.BASE,
   },
 });
 

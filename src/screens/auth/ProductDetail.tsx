@@ -30,6 +30,7 @@ import CoffeeBean from '@assets/icons/detail/coffeeBean.svg';
 import CoffeBag from '@assets/icons/detail/coffeBag.svg';
 import StarIcon from '@assets/icons/home/star.svg';
 import apiClient from '@configs/api';
+import {storage} from '@configs/mmkvStorage';
 
 type ProductDetailProps = {
   navigation: StackNavigationProp<RootStackParamList, 'ProductDetail'>;
@@ -38,18 +39,35 @@ type ProductDetailProps = {
 
 const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
   const {item} = route.params;
+  console.log(item, 'product item');
   const isDarkMode = useColorScheme() === 'dark';
   const [expanded, toggleRead] = useReducer(prev => !prev, false);
-  const [selectedSize, setSelectedSize] = useState('M');
+  const [selectedSize, setSelectedSize] = useState('S');
   const [isFavourite, toggleFav] = useReducer(prev => !prev, false);
 
-  console.log(item, 'product id');
-
+  // customize available item
   const sizes = [
-    {id: 'S', label: 'Small', price: item.price},
-    {id: 'M', label: 'Medium', price: item.price + 2.45},
-    {id: 'L', label: 'Large', price: item.price + 3.85},
+    {id: 'S', label: 'Small', price: item.price, weight: `${item.weight}g`},
+    {
+      id: 'M',
+      label: 'Medium',
+      price: item.price * 1.38,
+      weight: `${parseInt(item.weight) * 1.5}g`,
+    },
+    {
+      id: 'L',
+      label: 'Large',
+      price: item.price * 1.53,
+      weight: `${parseInt(item.weight) * 2}g`,
+    },
   ];
+
+  const sizeBasePrice =
+    sizes.find(size => size.id === selectedSize)?.price.toFixed(2) || 'N/A';
+
+  const sizeBaseWeight = item.weight
+    ? sizes.find(size => size.id === selectedSize)?.weight
+    : 'N/A';
 
   const handleGoBack = () => {
     navigation.goBack();
@@ -73,6 +91,8 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
     }
     Alert.alert('Something went wrong');
   }, [item]);
+
+  console.log(item, 'product detail item');
 
   return (
     <SafeAreaView
@@ -117,10 +137,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}>
         <View style={styles.imageContainer}>
-          <Image
-            source={require('@assets/images/coffeeSplash.jpg')}
-            style={styles.image}
-          />
+          <Image source={{uri: item.image_url}} style={styles.image} />
         </View>
 
         <View style={styles.productInfoContainer}>
@@ -128,9 +145,9 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
             <CustomText
               weight="BOLD"
               style={[styles.title, isDarkMode && {color: COLORS.OFF_WHITE}]}>
-              Cappucino
+              {item.name}
             </CustomText>
-            <CustomText style={styles.subtitle}>with Chocolate</CustomText>
+            <CustomText style={styles.subtitle}>{item.region}</CustomText>
             <View style={styles.ratingContainer}>
               <StarIcon />
               <CustomText weight="BOLD" style={styles.ratingText}>
@@ -220,6 +237,40 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
           </View>
         </View>
 
+        <View style={{flexDirection: 'row', justifyContent: 'space-between'}}>
+          <View style={styles.descriptionContainer}>
+            <CustomText
+              weight="BOLD"
+              style={[
+                styles.sectionTitle,
+                isDarkMode && {color: COLORS.OFF_WHITE},
+              ]}>
+              Roast Level
+            </CustomText>
+            <View>
+              <CustomText style={styles.descriptionText}>
+                {item.roast_level ? item.roast_level : 'N/A'}
+              </CustomText>
+            </View>
+          </View>
+          <View style={styles.descriptionContainer}>
+            <CustomText
+              weight="BOLD"
+              style={[
+                styles.sectionTitle,
+                isDarkMode && {color: COLORS.OFF_WHITE},
+              ]}>
+              Weight
+            </CustomText>
+            <View>
+              <CustomText
+                style={[styles.descriptionText, {textAlign: 'right'}]}>
+                {sizeBaseWeight}
+              </CustomText>
+            </View>
+          </View>
+        </View>
+
         {/* Ensures the Buy Now Container doesn't overlap over the Size */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
@@ -237,7 +288,7 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
             Price
           </CustomText>
           <CustomText weight="SEMI_BOLD" style={styles.price}>
-            $ 4.53
+            $ {sizeBasePrice}
           </CustomText>
         </View>
         <TouchableOpacity style={styles.buyButton}>
