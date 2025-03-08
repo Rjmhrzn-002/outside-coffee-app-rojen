@@ -18,16 +18,20 @@ https://github.com/Rjmhrzn-002/outside-coffee-app-rojen/releases/tag/v1.0.0
 
 ## Screenshots
 
-![Unauthorized Screen](https://drive.google.com/file/d/1wrxJG8dKV4jMB07ZPszPwzPy78NvDZtZ/view?usp=drive_link)
-![Authorized Screen](https://drive.google.com/file/d/1wrvjaJg6XjiABKqNuyPRII_YZ0pYwFMf/view?usp=drive_link)
-[Add more screenshots as needed]
+### Unauthorized Screen
+
+[![Unauthorized Screen](src/assets/images/github/onboard.jpg)](https://drive.google.com/file/d/1wrxJG8dKV4jMB07ZPszPwzPy78NvDZtZ/view?usp=sharing)
+
+### Authorized Screen
+
+[![Authorized Screen](src/assets/images/github/hometab.jpg)](https://drive.google.com/file/d/1wrvjaJg6XjiABKqNuyPRII_YZ0pYwFMf/view?usp=sharing)
 
 ## Installation
 
 1. Clone the repository
 
 ```
-git clone https://github.com/yourusername/repo-name.git
+git clone https://github.com/Rjmhrzn-002/outside-coffee-app-rojen
 ```
 
 2. Install dependencies
