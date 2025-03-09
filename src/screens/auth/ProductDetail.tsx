@@ -8,6 +8,7 @@ import {
   useColorScheme,
   TouchableOpacity,
   ScrollView,
+  ToastAndroid,
   Alert,
 } from 'react-native';
 import {
@@ -17,7 +18,7 @@ import {
   FONTS,
   SPACING,
 } from '../../Constants';
-
+import Modal from 'react-native-modal';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParamList} from '@navigations/AppStackNavigation';
 import {RouteProp} from '@react-navigation/native';
@@ -33,7 +34,11 @@ import apiClient from '@configs/api';
 import {storage} from '@configs/mmkvStorage';
 
 type ProductDetailProps = {
-  navigation: StackNavigationProp<RootStackParamList, 'ProductDetail'>;
+  navigation: StackNavigationProp<
+    RootStackParamList,
+    'BottomTabs',
+    'ProductDetail'
+  >;
   route: RouteProp<RootStackParamList, 'ProductDetail'>;
 };
 
@@ -42,9 +47,10 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
   console.log(item, 'product item');
   const isDarkMode = useColorScheme() === 'dark';
   const [expanded, toggleRead] = useReducer(prev => !prev, false);
+  const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('S');
   const [isFavourite, toggleFav] = useReducer(prev => !prev, false);
-
+  const [isModalVisible, setModalVisible] = useState(false);
   // customize available item
   const sizes = [
     {id: 'S', label: 'Small', price: item.price, weight: `${item.weight}g`},
@@ -73,16 +79,18 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
     navigation.goBack();
   };
 
-  // ! Not in use: GET endpoint response failure
-  // const fetchProductDetail = async (id: number) => {
-  //   try {
-  // setLoading(true)
-  //     const productRes: Event = await apiClient.get(`/api/${itemId}`);
-  //   } catch (error) {
-  // console.log('Error while fetching product:',error);
-  // } finally {
-  // setLoading(false)}
-  // };
+  const handleIncrease = () => setQuantity(prev => prev + 1);
+  const handleDecrease = () => setQuantity(prev => (prev > 1 ? prev - 1 : 1));
+  const toggleModal = () => setModalVisible(!isModalVisible);
+  const handleContinue = () => {
+    toggleModal();
+    ToastAndroid.showWithGravity(
+      'Purchase Successful!',
+      ToastAndroid.LONG,
+      ToastAndroid.CENTER,
+    );
+    navigation.navigate('BottomTabs');
+  };
 
   useEffect(() => {
     if (item) {
@@ -91,8 +99,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
     }
     Alert.alert('Something went wrong');
   }, [item]);
-
-  console.log(item, 'product detail item');
 
   return (
     <SafeAreaView
@@ -291,12 +297,95 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
             $ {sizeBasePrice}
           </CustomText>
         </View>
-        <TouchableOpacity style={styles.buyButton}>
+        <TouchableOpacity onPress={toggleModal} style={styles.buyButton}>
           <CustomText weight="BOLD" style={styles.buyButtonText}>
             Buy Now
           </CustomText>
         </TouchableOpacity>
       </View>
+
+      {/* Bottom Sheet Modal */}
+      <Modal
+        isVisible={isModalVisible}
+        onSwipeComplete={toggleModal} // Close on swipe down
+        swipeDirection="down"
+        onBackdropPress={toggleModal} // Close on tapping outside
+        style={styles.bottomModal}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        backdropOpacity={0.5}>
+        <View
+          style={[
+            styles.modalContent,
+            isDarkMode && {backgroundColor: '#1E1E1E'},
+          ]}>
+          {/* Header */}
+          <View style={styles.modalHeader}>
+            <View style={styles.handleBar} />
+            <CustomText
+              weight="SEMI_BOLD"
+              style={[styles.modalTitle, isDarkMode && {color: 'white'}]}>
+              Purchase Summary
+            </CustomText>
+          </View>
+
+          {/* Product Info */}
+          <View style={styles.productInfo}>
+            <Image source={{uri: item.image_url}} style={styles.productImage} />
+            <View>
+              <CustomText
+                weight="BOLD"
+                style={[styles.productName, isDarkMode && {color: 'white'}]}>
+                {item.name}
+              </CustomText>
+              <CustomText style={styles.productRegion}>
+                {item.region}
+              </CustomText>
+            </View>
+          </View>
+
+          {/* Quantity Selection */}
+          <View style={styles.quantityContainer}>
+            <CustomText
+              style={[styles.sectionTitle, isDarkMode && {color: 'white'}]}>
+              Quantity:
+            </CustomText>
+            <View style={styles.quantityControls}>
+              <TouchableOpacity
+                onPress={handleDecrease}
+                style={styles.quantityButton}>
+                <CustomText style={styles.quantityButtonText}>-</CustomText>
+              </TouchableOpacity>
+              <CustomText
+                style={[styles.quantityValue, isDarkMode && {color: 'white'}]}>
+                {quantity}
+              </CustomText>
+              <TouchableOpacity
+                onPress={handleIncrease}
+                style={styles.quantityButton}>
+                <CustomText style={styles.quantityButtonText}>+</CustomText>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* Price Details */}
+          <View style={styles.priceContainer}>
+            <CustomText style={styles.priceLabel}>Total Price</CustomText>
+            <CustomText style={styles.price}>
+              ${(item.price * quantity).toFixed(2)}
+            </CustomText>
+          </View>
+
+          {/* Confirm Purchase */}
+          <TouchableOpacity
+            onPress={handleContinue}
+            style={styles.confirmButton}>
+            <CustomText weight="SEMI_BOLD" style={styles.confirmButtonText}>
+              Confirm Purchase
+            </CustomText>
+          </TouchableOpacity>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 };
@@ -310,7 +399,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: SPACING.XXL, // extra space to avoid different camera notch sizes
+    marginTop: SPACING.XXL,
     marginHorizontal: SPACING.LG,
   },
   headerButton: {
@@ -489,8 +578,92 @@ const styles = StyleSheet.create({
   },
   buyButtonText: {
     color: '#fff',
-    // fontWeight: 'bold',
     fontSize: FONT_SIZES.MD,
+  },
+  bottomModal: {
+    justifyContent: 'flex-end',
+    margin: 0,
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  handleBar: {
+    width: 50,
+    height: 5,
+    backgroundColor: '#ccc',
+    borderRadius: 3,
+    marginBottom: 10,
+  },
+  modalTitle: {
+    fontSize: 18,
+    color: COLORS.GRAY,
+  },
+  productInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  productImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 10,
+    marginRight: 10,
+  },
+  productName: {
+    color: COLORS.GRAY,
+    fontSize: FONT_SIZES.XL,
+  },
+  productRegion: {
+    fontSize: FONT_SIZES.MD,
+  },
+  quantityContainer: {
+    marginBottom: 15,
+  },
+  quantityControls: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#eee',
+    padding: 10,
+    borderRadius: 8,
+    width: 120,
+    alignSelf: 'center',
+  },
+  quantityButton: {
+    padding: SPACING.SM,
+
+    backgroundColor: COLORS.PRIMARY_SOFT,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderBottomWidth: 3,
+    borderColor: COLORS.PRIMARY,
+  },
+  quantityButtonText: {
+    color: COLORS.PRIMARY,
+    fontSize: 18,
+    paddingHorizontal: 10,
+  },
+  quantityValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginHorizontal: 15,
+  },
+  confirmButton: {
+    backgroundColor: COLORS.PRIMARY,
+    padding: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmButtonText: {
+    color: COLORS.WHITE,
+    fontSize: 16,
   },
 });
 

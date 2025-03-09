@@ -369,6 +369,7 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
             <CustomText style={styles.locationTitle}>Location</CustomText>
             <CustomText weight="SEMI_BOLD" style={styles.locationText}>
               Bilzen, Tanjungbalai
+              <ChevronDown />
             </CustomText>
           </View>
           <View style={styles.headerRightContainer}>
@@ -435,6 +436,7 @@ const styles = StyleSheet.create({
   locationText: {
     color: 'white',
     fontSize: FONT_SIZES.LG,
+    marginRight: 5,
   },
   headerRightContainer: {
     position: 'relative',
