@@ -5,6 +5,7 @@ import {
   StatusBar,
   useColorScheme,
   SafeAreaView,
+  Image,
 } from 'react-native';
 import CustomText from '@components/global/CustomText';
 import {COLORS, SPACING} from '../../Constants';
@@ -36,6 +37,14 @@ const BagScreen = () => {
           styles.container,
           {backgroundColor: isDarkMode ? COLORS.GRAY : '#f8f8f8'},
         ]}>
+        <Image
+          style={{
+            width: 200,
+            height: 200,
+            resizeMode: 'contain',
+          }}
+          source={require('@assets/images/github/under_construction.png')}
+        />
         <CustomText
           weight="BOLD"
           style={[styles.title, isDarkMode && {color: COLORS.TEXT}]}>

@@ -304,12 +304,11 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
         </TouchableOpacity>
       </View>
 
-      {/* Bottom Sheet Modal */}
       <Modal
         isVisible={isModalVisible}
-        onSwipeComplete={toggleModal} // Close on swipe down
+        onSwipeComplete={toggleModal}
         swipeDirection="down"
-        onBackdropPress={toggleModal} // Close on tapping outside
+        onBackdropPress={toggleModal}
         style={styles.bottomModal}
         animationIn="slideInUp"
         animationOut="slideOutDown"
@@ -319,7 +318,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
             styles.modalContent,
             isDarkMode && {backgroundColor: '#1E1E1E'},
           ]}>
-          {/* Header */}
           <View style={styles.modalHeader}>
             <View style={styles.handleBar} />
             <CustomText
@@ -329,7 +327,6 @@ const ProductDetail: React.FC<ProductDetailProps> = ({navigation, route}) => {
             </CustomText>
           </View>
 
-          {/* Product Info */}
           <View style={styles.productInfo}>
             <Image source={{uri: item.image_url}} style={styles.productImage} />
             <View>

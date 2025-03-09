@@ -383,6 +383,7 @@ const HomeScreen: React.FC<Props> = ({navigation}) => {
             </TouchableOpacity>
           </View>
         </View>
+
         <SearchBar
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
@@ -425,7 +426,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-end',
-    marginHorizontal: responsiveWidth(5), // 5% of screen width for horizontal margins
+    marginHorizontal: SPACING.LG,
     paddingVertical: SPACING.SM,
   },
   locationTitle: {
