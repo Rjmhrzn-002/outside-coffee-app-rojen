@@ -16,15 +16,11 @@ A mobile application for coffee enthusiasts built with React Native.
 
 https://github.com/Rjmhrzn-002/outside-coffee-app-rojen/releases/tag/v1.0.0
 
-## Screen Recordings
+## Demo App Recoring
 
-### Unauthorized Screen Recording
+### Unauthorized Screen Recording          
 
-[![Unauthorized Screen](src/assets/images/github/onboard.jpg)](https://drive.google.com/file/d/1wrxJG8dKV4jMB07ZPszPwzPy78NvDZtZ/view?usp=sharing)
-
-### Authorized Screen Recording
-
-[![Authorized Screen](src/assets/images/github/hometab.jpg)](https://drive.google.com/file/d/1wrvjaJg6XjiABKqNuyPRII_YZ0pYwFMf/view?usp=sharing)
+[![All](src/assets/images/github/onboard.jpg)](https://drive.google.com/file/d/1wv6dJdxA05M4vl0QHNKyvXCC8Zivm5ga/view?usp=sharing)
 
 ## Installation
 
